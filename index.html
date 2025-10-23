@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>P+G Cyberpunk — Live</title>
+<style>
+  :root{
+    --bg1: #000000;
+    --bg2: #041226;
+    --bg3: #2b0038;
+    --matrix-green: #00ff66;
+    --accent-cyan: rgba(0,255,234,0.12);
+    --accent-magenta: rgba(255,45,149,0.08);
+    --white: #fff;
+  }
+  html,body{
+    height:100%;
+    margin:0;
+    background: linear-gradient(180deg,var(--bg1) 0%, var(--bg2) 35%, var(--bg3) 100%);
+    overflow:hidden;
+    font-family: 'VT323', monospace, 'Courier New', monospace;
+    color:var(--matrix-green);
+  }
+
+  /* layout */
+  .wrap{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:28px;padding:40px}
+  .icon-container{display:flex;gap:120px;align-items:center;justify-content:center;z-index:6}
+  button.icon-btn{width:140px;height:180px;display:block;position:relative;cursor:pointer;background:transparent;border:none;padding:0}
+  svg.icon-svg{width:100%;height:100%;position:relative;z-index:6;overflow:visible}
+  .shape-path{fill:none;stroke:#fff;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+  .shape-text{fill:#fff;font-weight:700;font-family:Courier, monospace;font-size:18px;dominant-baseline:middle;text-anchor:middle}
+
+  /* chromatic outlines */
+  .outline-left{stroke:rgba(0,0,255,0.9);stroke-width:2.2;filter:blur(.6px);mix-blend-mode:screen;transform-origin:center;}
+  .outline-right{stroke:rgba(255,59,59,0.9);stroke-width:2.2;filter:blur(.6px);mix-blend-mode:screen;transform-origin:center;}
+
+  /* oscillations */
+  .slow-osc{animation:osc1 2.6s infinite ease-in-out}
+  .fast-osc{animation:osc2 1.8s infinite ease-in-out}
+  @keyframes osc1{0%{transform:translateX(-3px) translateY(-1px)}50%{transform:translateX(2px) translateY(1px)}100%{transform:translateX(-3px) translateY(-1px)}}
+  @keyframes osc2{0%{transform:translateX(3px) translateY(2px)}50%{transform:translateX(-2px) translateY(-1px)}100%{transform:translateX(3px) translateY(2px)}}
+
+  /* VHS overlays */
+  #staticNoise{position:fixed;inset:0;z-index:40;pointer-events:none;mix-blend-mode:screen;opacity:0.14;background-image:url("https://media.giphy.com/media/oEI9uBYSzLpBK/giphy.gif");background-size:cover;animation:moveStatic 0.18s steps(2) infinite}
+  @keyframes moveStatic{from{background-position:0 0}to{background-position:100% 100%}}
+  #scanlines{position:fixed;inset:0;z-index:42;pointer-events:none;background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 2px, transparent 4px);opacity:0.22;mix-blend-mode:overlay;animation:scanlineShift 5.8s linear infinite}
+  @keyframes scanlineShift{0%{background-position:0 0}100%{background-position:0 8px}}
+  #flickerBars{position:fixed;inset:0;z-index:43;pointer-events:none;background:linear-gradient(180deg, rgba(255,255,255,0.14), transparent 50%, rgba(255,255,255,0.14));mix-blend-mode:overlay;opacity:0.06;animation:flicker 2.2s infinite}
+  @keyframes flicker{0%,100%{opacity:0.04}50%{opacity:0.16}}
+
+  /* cursor halo */
+  .cursor{position:fixed;left:0;top:0;width:160px;height:160px;border-radius:50%;pointer-events:none;z-index:100;mix-blend-mode:screen;transform:translate(-50%,-50%) scale(0.8);transition:transform .05s linear;filter:blur(6px)}
+  .cursor .ring{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%, rgba(0,255,234,0.45), transparent 20%), radial-gradient(circle at 70% 70%, rgba(255,45,149,0.25), transparent 18%);animation:ringJitter .9s infinite}
+  .cursor .noise{position:absolute;inset:12px;border-radius:50%;background-image:radial-gradient(circle, rgba(255,255,255,0.06), transparent 2px);mix-blend-mode:overlay;opacity:0.9;animation:noiseFloater .06s steps(2) infinite}
+  .cursor .glitchSlices{position:absolute;inset:0;border-radius:50%;overflow:hidden;mix-blend-mode:screen;pointer-events:none}
+  .cursor .glitchSlices div{position:absolute;left:-10%;width:120%;height:18%;background:linear-gradient(90deg, rgba(255,255,255,0.12), transparent);mix-blend-mode:overlay;animation:sliceMove .6s infinite;opacity:0.9}
+  .cursor .glitchSlices div:nth-child(2){top:25%;animation-duration:.42s;transform:skewX(-6deg)}
+  .cursor .glitchSlices div:nth-child(1){top:5%;animation-duration:.58s;transform:skewX(6deg)}
+  .cursor .glitchSlices div:nth-child(3){top:45%;animation-duration:.38s;transform:skewX(-3deg)}
+  .cursor .glitchSlices div:nth-child(4){top:65%;animation-duration:.48s;transform:skewX(4deg)}
+  @keyframes sliceMove{0%{transform:translateX(-4%)}50%{transform:translateX(6%)}100%{transform:translateX(-4%)}}
+  @keyframes ringJitter{0%{transform:scale(1)}25%{transform:scale(.98)}50%{transform:scale(1.03)}75%{transform:scale(.97)}100%{transform:scale(1)}}
+  @keyframes noiseFloater{0%{transform:translateY(0)}100%{transform:translateY(-2px)}}
+
+  /* flicker / crackle */
+  .glitchFlicker{animation:fastFlicker .08s steps(2) infinite;opacity:1}
+  @keyframes fastFlicker{0%{opacity:1}50%{opacity:0.25}100%{opacity:1}}
+  .crackle{animation:crackleAnim .45s steps(3) infinite;mix-blend-mode:screen}
+  @keyframes crackleAnim{0%{text-shadow:0 0 0 rgba(255,255,255,0.0)}33%{text-shadow:0 0 6px rgba(255,255,255,0.95), -2px 0 6px rgba(255,45,149,0.5)}66%{text-shadow:0 0 8px rgba(255,255,255,0.95), 2px 0 8px rgba(0,255,234,0.45)}100%{text-shadow:0 0 0 rgba(255,255,255,0.0)}}
+
+  /* starfield */
+  #stars{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+  .star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:0.85;filter:drop-shadow(0 0 6px rgba(255,255,255,0.06));}
+  .star.tiny{width:1px;height:1px;opacity:0.7;filter:none}
+
+  /* click2play CRT */
+  #click2play{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:34px;color:var(--matrix-green);text-shadow:0 0 8px var(--matrix-green),0 0 20px rgba(0,255,102,0.08);opacity:0.86;z-index:200;pointer-events:none;user-select:none;mix-blend-mode:screen}
+  .click2play-crt{font-family: 'VT323', monospace, "Courier New", monospace;letter-spacing:1px}
+  .click2play-glitch{filter:drop-shadow(0 0 10px rgba(0,255,102,0.25));}
+
+  @keyframes clickGlitch {
+    0% { opacity: 1; transform: translate(-50%, -50%) skewX(0deg); filter: none; }
+    50% { opacity: 0.5; transform: translate(-50%, -52%) skewX(-6deg); filter: blur(2px) hue-rotate(60deg); }
+    100% { opacity: 0; transform: translate(-50%, -56%) skewX(12deg); filter: blur(6px) hue-rotate(140deg); }
+  }
+
+  /* flash overlay */
+  .flash-overlay{position:fixed;inset:0;z-index:90;pointer-events:none;mix-blend-mode:screen;opacity:0;transition:opacity .12s linear}
+  .flash-red{background:linear-gradient(180deg, rgba(255,40,40,0.22), rgba(255,10,10,0.12));}
+  .flash-blue{background:linear-gradient(180deg, rgba(30,144,255,0.18), rgba(10,30,255,0.12));}
+  .burst{position:fixed;inset:0;z-index:91;pointer-events:none;opacity:0;background:repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0 1px, transparent 2px);mix-blend-mode:overlay;transition:opacity .08s linear}
+
+  /* cyber-tv */
+  .cyber-tv{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);width:360px;height:210px;z-index:80;border-radius:10px;overflow:hidden;box-shadow:0 8px 40px rgba(0,255,102,0.06);backdrop-filter: blur(2px);pointer-events:auto}
+  .cyber-tv video{width:100%;height:100%;object-fit:cover;display:block}
+  .tv-frame{position:absolute;inset:-6px;border-radius:12px;pointer-events:none;mix-blend-mode:screen}
+  .tv-glow{position:absolute;inset:-18px;border-radius:18px;background:radial-gradient(ellipse at 50% 10%, rgba(0,255,102,0.08), transparent 20%), linear-gradient(90deg, rgba(0,255,234,0.02), rgba(255,45,149,0.02));filter:blur(10px);opacity:0.9;pointer-events:none}
+
+  /* tv reflection */
+  .tv-reflect{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;background:linear-gradient(0deg, rgba(255,255,255,0.02), transparent 25%);mix-blend-mode:overlay;opacity:0.6}
+
+  /* worm */
+  .worm-wrap{position:fixed;left:50%;bottom:4px;transform:translateX(-50%);z-index:85;pointer-events:auto}
+  .worm-btn{width:22px;height:12px;display:block;border-radius:12px;background:linear-gradient(90deg,#222,#111);border:1px solid rgba(255,255,255,0.06);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.6)}
+  .worm-svg{display:block;width:22px;height:12px;transform:translateY(-1px)}
+
+  /* confetti */
+  .confetti-piece{position:fixed;width:8px;height:8px;z-index:200;pointer-events:none;opacity:0.95}
+
+  /* neon-inverse mode */
+  body.inverse{background: linear-gradient(180deg,#f6f9ff 0%, #e6f3ff 35%, #ffe8ff 100%);color:#0b1220}
+  body.inverse .shape-path{stroke:#0b1220}
+  body.inverse .shape-text{fill:#0b1220}
+  body.inverse #staticNoise{opacity:0.06}
+  body.inverse #scanlines{opacity:0.08}
+  body.inverse .click2play-crt{color:#00ff66cc}
+
+  /* small screens */
+  @media(max-width:600px){
+    .icon-container{gap:46px;flex-direction:column}
+    .cursor{width:120px;height:120px}
+    .cyber-tv{width:260px;height:150px}
+  }
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<div id="staticNoise"></div>
+<div id="scanlines"></div>
+<div id="flickerBars"></div>
+
+<div class="wrap">
+  <div class="icon-container">
+    <!-- Paint button -->
+    <button id="paintBtn" class="icon-btn" aria-label="Paint" title="Paint (click 25x)">
+      <svg class="icon-svg" viewBox="0 0 64 80" preserveAspectRatio="xMidYMid meet">
+        <path class="shape-path outline-left slow-osc" d="M12 20 q20-20 40 0 v40 h-40z" />
+        <path class="shape-path outline-right fast-osc" d="M12 20 q20-20 40 0 v40 h-40z" />
+        <path class="shape-path" d="M12 20 q20-20 40 0 v40 h-40z" />
+        <text id="paintText" class="shape-text" x="32" y="50">P</text>
+      </svg>
+    </button>
+
+    <!-- Glue button -->
+    <button id="glueBtn" class="icon-btn" aria-label="Glue" title="Glue (click 25x)">
+      <svg class="icon-svg" viewBox="0 0 64 80" preserveAspectRatio="xMidYMid meet">
+        <path class="shape-path outline-left slow-osc" d="M28 4h8v8h-8zM24 12h16v8H24zM20 20h24l2 32H18z"/>
+        <path class="shape-path outline-right fast-osc" d="M28 4h8v8h-8zM24 12h16v8H24zM20 20h24l2 32H18z"/>
+        <path class="shape-path" d="M28 4h8v8h-8zM24 12h16v8H24zM20 20h24l2 32H18z"/>
+        <text id="glueText" class="shape-text" x="32" y="66">G</text>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Cyber TV at bottom-center -->
+<div class="cyber-tv" id="cyberTvWrap" aria-hidden="false">
+  <div class="tv-glow"></div>
+  <video id="cyberTv" src="MoshUp_0021~2.mp4" autoplay muted loop playsinline></video>
+  <div class="tv-reflect"></div>
+  <div class="tv-frame"></div>
+</div>
+
+<!-- worm under TV -->
+<div class="worm-wrap" id="wormWrap" aria-hidden="false">
+  <div id="wormBtn" class="worm-btn" title="(secret)"></div>
+</div>
+
+<!-- confetti container will be created dynamically -->
+<div id="confettiRoot"></div>
+
+<!-- cursor -->
+<div class="cursor" id="cursor" aria-hidden="true">
+  <div class="ring"></div>
+  <div class="noise"></div>
+  <div class="glitchSlices">
+    <div></div><div></div><div></div><div></div>
+  </div>
+</div>
+
+<!-- overlays for jolt -->
+<div id="flash" class="flash-overlay"></div>
+<div id="burst" class="burst"></div>
+
+<!-- Audio: file in same folder -->
+<audio id="bgm" src="BM AM & PM.m4a" autoplay muted loop></audio>
+
+<script>
+/* =========================
+   Global behavior & helpers
+   ========================= */
+const audio = document.getElementById('bgm');
+audio.volume = 0;
+audio.muted = true;
+audio.loop = true;
+audio.play().catch(()=>{}); // may be blocked until user interaction
+
+// ensure audio never pauses on subsequent clicks
+let musicStarted = false;
+function fadeInAudio(){
+  if(musicStarted) return;
+  musicStarted = true;
+  audio.muted = false;
+  let v = 0;
+  const iv = setInterval(()=>{
+    v = Math.min(1, v + 0.05);
+    audio.volume = v;
+    if(v >= 1) clearInterval(iv);
+  }, 120);
+}
+
+// Universal first-click handler:
+// - unmute & fade in music
+// - glitch-out Click2Play overlay
+function onFirstInteraction(){
+  fadeInAudio();
+  // remove click2play permanently if present
+  const cp = document.getElementById('click2play');
+  if(cp){
+    cp.style.animation = 'clickGlitch 0.8s forwards';
+    setTimeout(()=> cp.remove(), 850);
+  }
+  // remove this handler after first use
+  document.removeEventListener('click', onFirstInteraction);
+  document.removeEventListener('touchstart', onFirstInteraction);
+}
+document.addEventListener('click', onFirstInteraction);
+document.addEventListener('touchstart', onFirstInteraction, {passive:true});
+
+/* =========================
+   Click2Play ghost text
+   ========================= */
+(function createClick2Play(){
+  const click2play = document.createElement('div');
+  click2play.id = 'click2play';
+  click2play.className = 'click2play-crt click2play-glitch';
+  click2play.textContent = 'Click2Play';
+  document.body.appendChild(click2play);
+
+  function randomPos(){
+    if(musicStarted) return;
+    const safeTop = Math.random()*60 + 5; // 5% - 65%
+    const safeLeft = (Math.random()<0.5) ? Math.random()*22 : 78 + Math.random()*18;
+    click2play.style.top = safeTop + '%';
+    click2play.style.left = safeLeft + '%';
+    // random flicker/time
+    setTimeout(randomPos, 1600 + Math.random()*2000);
+  }
+  setTimeout(randomPos, 900);
+})();
+
+/* =========================
+   Starfield
+   ========================= */
+(function makeStars(){
+  const starsRoot = document.getElementById('stars');
+  const count = 120; // subtle + sparse
+  for(let i=0;i<count;i++){
+    const s = document.createElement('div');
+    s.className = 'star' + (Math.random()<0.35 ? ' tiny' : '');
+    s.style.left = (Math.random()*100) + '%';
+    s.style.top = (Math.random()*100) + '%';
+    s.style.opacity = 0.4 + Math.random()*0.6;
+    s.style.width = (Math.random()*1.6 + 0.6) + 'px';
+    s.style.height = s.style.width;
+    starsRoot.appendChild(s);
+    // twinkle & drift
+    (function(st){
+      setInterval(()=>{
+        if(Math.random() < 0.12){
+          st.style.opacity = 0.3 + Math.random()*0.7;
+        }
+        const nl = (parseFloat(st.style.left) + (Math.random()-0.5)*0.6 + 100) % 100;
+        const nt = (parseFloat(st.style.top) + (Math.random()-0.5)*0.4 + 100) % 100;
+        st.style.left = nl + '%';
+        st.style.top = nt + '%';
+      }, 1600 + Math.random()*2400);
+    })(s);
+  }
+})();
+
+/* =========================
+   Cursor follow
+   ========================= */
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', (e)=>{
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
+document.addEventListener('pointerdown', ()=>{
+  cursor.style.filter = 'blur(2px) hue-rotate(15deg) saturate(1.2)';
+  setTimeout(()=> cursor.style.filter = 'blur(6px)', 120);
+});
+
+/* =========================
+   Paint & Glue click logic (25 clicks -> jolt)
+   ========================= */
+let paintClicks = 0, glueClicks = 0;
+const flash = document.getElementById('flash');
+const burst = document.getElementById('burst');
+
+function triggerJolt(color){
+  flash.className = 'flash-overlay flash-' + color;
+  flash.style.opacity = 0.98;
+  burst.style.opacity = 0.9;
+  document.body.style.filter = 'contrast(1.14) saturate(1.25)';
+  setTimeout(()=>{ burst.style.opacity = 0; }, 300);
+  setTimeout(()=>{ flash.style.opacity = 0; document.body.style.filter = ''; }, 3000);
+}
+document.getElementById('paintBtn').addEventListener('click', ()=>{
+  paintClicks++;
+  // tiny visual pulse
+  const btn = document.getElementById('paintBtn');
+  btn.style.transform = 'scale(0.98) translateY(-3px)';
+  setTimeout(()=> btn.style.transform = '', 120);
+  if(paintClicks >= 25){ paintClicks = 0; triggerJolt('red'); }
+});
+document.getElementById('glueBtn').addEventListener('click', ()=>{
+  glueClicks++;
+  const btn = document.getElementById('glueBtn');
+  btn.style.transform = 'scale(0.98) translateY(-3px)';
+  setTimeout(()=> btn.style.transform = '', 120);
+  if(glueClicks >= 25){ glueClicks = 0; triggerJolt('blue'); }
+});
+
+/* =========================
+   Worm Easter egg (29 clicks -> confetti)
+   ========================= */
+const wormBtn = document.getElementById('wormBtn');
+let wormClicks = 0;
+wormBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  wormClicks++;
+  // micro jiggle feedback
+  wormBtn.style.transform = 'translateY(-2px)';
+  setTimeout(()=> wormBtn.style.transform = '', 80);
+  if(wormClicks >= 29){
+    wormClicks = 0;
+    spawnConfetti(e.clientX || window.innerWidth/2, e.clientY || (window.innerHeight - 60));
+  }
+});
+
+// confetti generator
+function spawnConfetti(x,y){
+  const root = document.getElementById('confettiRoot');
+  const colors = ['#00ff66','#ff2d95','#00d0ff','#ffd400'];
+  const pieces = 28;
+  for(let i=0;i<pieces;i++){
+    const d = document.createElement('div');
+    d.className = 'confetti-piece';
+    d.style.left = (x + (Math.random()-0.5)*140) + 'px';
+    d.style.top = (y + (Math.random()-0.5)*40) + 'px';
+    d.style.background = colors[Math.floor(Math.random()*colors.length)];
+    const size = 6 + Math.floor(Math.random()*8);
+    d.style.width = size + 'px';
+    d.style.height = (Math.random()>0.5 ? size : Math.max(3, size/2)) + 'px';
+    d.style.transform = 'rotate(' + Math.floor(Math.random()*360) + 'deg)';
+    root.appendChild(d);
+    // animate
+    const dx = (Math.random()-0.5)*160;
+    const dy = -120 - Math.random()*160;
+    d.animate([
+      { transform: 'translateY(0) rotate(0)', opacity:1 },
+      { transform: `translate(${dx}px, ${dy}px) rotate(${Math.random()*720-360}deg)`, opacity:0.1 }
+    ],{duration: 900 + Math.random()*700, easing: 'cubic-bezier(.2,.8,.2,1)'});
+    setTimeout(()=> d.remove(), 1600);
+  }
+}
+
+/* =========================
+   Small global micro-glitches & flicker on texts
+   ========================= */
+setInterval(()=>{
+  document.querySelectorAll('.shape-text').forEach(t=>{
+    if(Math.random() < 0.25){
+      t.classList.add('crackle');
+      setTimeout(()=> t.classList.remove('crackle'), 180 + Math.random()*380);
+    }
+  });
+}, 360);
+
+/* tiny scanline jitter */
+setInterval(()=>{
+  const s = document.getElementById('scanlines');
+  if(!s) return;
+  s.style.opacity = (0.16 + Math.random()*0.14).toFixed(2);
+}, 90);
+
+/* small burst rhythm */
+setInterval(()=>{
+  if(Math.random() < 0.25){
+    burst.style.opacity = 0.22;
+    setTimeout(()=> burst.style.opacity = 0, 120 + Math.random()*180);
+  }
+}, 700);
+
+/* =========================
+   Neon-inverse toggle (press M)
+   ========================= */
+document.addEventListener('keydown', (e)=>{
+  if(e.key.toLowerCase() === 'm'){
+    document.body.classList.toggle('inverse');
+    // quick invert flash
+    const f = document.getElementById('flash');
+    f.className = 'flash-overlay';
+    f.style.opacity = 0.2;
+    setTimeout(()=> f.style.opacity = 0, 160);
+  }
+});
+
+/* =========================
+   Timed background flash to JPG (2.5 minutes)
+   ========================= */
+const flashImageName = 'PXL_20251023_140822882.jpg';
+function triggerImageFlash(){
+  // overlay with image + glitch effects
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.zIndex = 200;
+  overlay.style.pointerEvents = 'none';
+  overlay.style.backgroundImage = `url("${flashImageName}")`;
+  overlay.style.backgroundSize = 'cover';
+  overlay.style.backgroundPosition = 'center';
+  overlay.style.mixBlendMode = 'screen';
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity 0.18s linear';
+  document.body.appendChild(overlay);
+  // show with quick glitch burst
+  setTimeout(()=> overlay.style.opacity = 1, 20);
+  // brief static burst
+  const staticBurst = document.createElement('div');
+  staticBurst.style.position = 'fixed';
+  staticBurst.style.inset = '0';
+  staticBurst.style.zIndex = 201;
+  staticBurst.style.background = 'repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0 1px, transparent 2px)';
+  staticBurst.style.mixBlendMode = 'overlay';
+  staticBurst.style.opacity = '0.9';
+  document.body.appendChild(staticBurst);
+  setTimeout(()=>{ staticBurst.style.opacity = 0; overlay.style.opacity = 0; }, 420);
+  setTimeout(()=>{ staticBurst.remove(); overlay.remove(); }, 900);
+}
+// schedule flash at 150000ms (2.5 minutes)
+setTimeout(triggerImageFlash, 150000);
+
+/* =========================
+   Ensure audio keeps playing on extra clicks/taps
+   ========================= */
+// (we already remove first-click handler after unmute)
+// additional clicks do not pause the music and no further handlers touch audio
+
+/* =========================
+   Prevent default long-press selection on mobile
+   ========================= */
+document.addEventListener('touchstart', ()=>{}, {passive:true});
+
+/* =========================
+   Optional: small keyboard helper overlay (not shown)
+   ========================= */
+
+/* =========================
+   End of script
+   ========================= */
+</script>
+</body>
+</html>
